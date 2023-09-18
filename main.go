@@ -73,7 +73,7 @@ func cloneGitRepo(repoURL, destPath, username, password string) error {
 
 	destPath = destPath + "/" + projectName + "/" + repoName
 
-	log.Debug("Cloning repo:", repoName, "to:", destPath)
+	log.Debugf("Cloning repo: %s to: %s", repoName, destPath)
 
 	_, err := git.PlainClone(destPath, false, &git.CloneOptions{
 		URL:      repoURL,
@@ -85,7 +85,7 @@ func cloneGitRepo(repoURL, destPath, username, password string) error {
 	})
 
 	if err != nil {
-		log.WithError(err).Error("Error cloning repo:", repoName, "to:", destPath)
+		log.WithError(err).Errorf("Error cloning repo: %s to: %s ", repoName, destPath)
 	}
 
 	return nil
@@ -109,6 +109,16 @@ func cloneListOfRepos(repos []string, destPath, username, password string) error
 	return nil
 }
 
+// function that creates chunks of length n from a slice of strings
+
+func chunks(s []string, n int) [][]string {
+	var chunks [][]string
+	for n < len(s) {
+		s, chunks = s[n:], append(chunks, s[0:n:n])
+	}
+	return append(chunks, s)
+}
+
 func main() {
 	if is_debug := os.Getenv("DEBUG"); is_debug == "true" {
 		log.SetLevel(log.DebugLevel)
@@ -128,10 +138,8 @@ func main() {
 		log.Debug("Repos:", strings.Join(repos, "\n"))
 	}
 	destPath := "./repos"
-	username := os.Getenv("USERNAME")
-	password := os.Getenv("PASSWORD")
 
 	// TODO: Split the list of repos into chunks to limit parallelism
-	cloneListOfRepos(repos, destPath, username, password)
-	ZipAllProjects("repos", "./repos_zipped")
+	cloneListOfRepos(repos, destPath, Cfg.GitUsername, Cfg.GitPassword)
+	ZipAllProjects("repos", Cfg.OutputDir)
 }
