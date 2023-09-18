@@ -1,14 +1,14 @@
 package bitbucket
 
 import (
+	"bitbucket_archiver/utils"
+
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
-
-	"bitbucket_archiver/utils"
 
 	log "github.com/sirupsen/logrus"
 )

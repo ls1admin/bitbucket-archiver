@@ -69,10 +69,42 @@ func main() {
 	}
 
 	utils.LoadConfig() // Load the config file into a global variable
-	repos, err := bitbucket.GetArchivedRepositories()
-	if err != nil {
-		log.WithError(err).Panic("Error reading the file to Array")
+
+	var repos []bitbucket.Repo
+
+	// Distinguish between API based archiving and file based archiving
+	if utils.Cfg.ProjectFile != "" {
+		// Project file is defined -> use file based archiving
+		log.Info("Starting file based archiving")
+
+		projects, err := utils.ReadFileLinesToArray(utils.Cfg.ProjectFile)
+		if err != nil {
+			log.WithError(err).Fatal("Error reading the file to Array")
+		}
+
+		// Iterate over all projects and gather all repos
+		for _, project := range projects {
+			log.Debug("Append repos from Project: ", project)
+
+			projectRepos, err := bitbucket.GetRepositoriesForProject(project)
+
+			log.Debugf("Found %d repos in %s: ", len(projectRepos), project)
+			if err != nil {
+				log.WithError(err).Panic("Error getting repos for project")
+			}
+
+			repos = append(repos, projectRepos...)
+		}
+
+	} else {
+		// Get repositories marked as archived from Bitbucket
+		archivedRepos, err := bitbucket.GetArchivedRepositories()
+		if err != nil {
+			log.WithError(err).Panic("Error reading the file to Array")
+		}
+		repos = append(repos, archivedRepos...)
 	}
+
 	// Log the whole repos slice with new lines between each repo
 	log.Info("Number of repos: ", len(repos))
 

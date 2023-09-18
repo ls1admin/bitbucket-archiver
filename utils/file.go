@@ -7,7 +7,7 @@ import (
 )
 
 // readFileLinesToArray reads a file line by line and returns an array of strings
-func readFileLinesToArray(filePath string) ([]string, error) {
+func ReadFileLinesToArray(filePath string) ([]string, error) {
 	// Open the file for reading
 	file, err := os.Open(filePath)
 	if err != nil {

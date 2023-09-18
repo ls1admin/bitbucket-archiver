@@ -23,6 +23,8 @@ type Config struct {
 	CloneDir  string `env:"CLONE_DIR" envDefault:"./repos_cloned"`
 
 	DeleteRepos bool // No env var for this one, just a flag
+
+	ProjectFile string
 }
 
 var Cfg Config
@@ -39,6 +41,7 @@ func LoadConfig() {
 	}
 
 	flag.BoolVar(&Cfg.DeleteRepos, "execute-delete", false, "Delete repos after cloning")
+	flag.StringVar(&Cfg.ProjectFile, "project-file", "", "Path to project file")
 	flag.Parse()
 
 	log.Debug("Config loaded: ", Cfg)
