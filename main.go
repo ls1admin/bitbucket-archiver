@@ -93,7 +93,7 @@ func cloneGitRepo(repoURL, destPath, username, password string) error {
 
 // cloneListOfRepos clones a list of Git repositories to the given destination path in parrallel
 // This funciton limits the number of parallel clones to 30
-func cloneListOfRepos(repos []string, destPath, username, password string) error {
+func cloneListOfRepos(repos []Repo, destPath, username, password string) error {
 	log.Debugf("Cloning %d repos", len(repos))
 	// safety check
 	if len(repos) > 30 {
@@ -103,15 +103,15 @@ func cloneListOfRepos(repos []string, destPath, username, password string) error
 
 	for _, repo := range repos {
 		clone_wg.Add(1)
-		go cloneGitRepo(repo, destPath, username, password)
+		go cloneGitRepo(*repo.GetHTTPRepoUrl(), destPath, username, password)
 	}
 	clone_wg.Wait()
 	return nil
 }
 
 // function that creates chunks of length n from a slice of strings
-func chunks(s []string, n int) [][]string {
-	var chunks [][]string
+func chunks[S any](s []S, n int) [][]S {
+	var chunks [][]S
 	for n < len(s) {
 		s, chunks = s[n:], append(chunks, s[0:n:n])
 	}
@@ -129,15 +129,13 @@ func main() {
 	if err != nil {
 		log.WithError(err).Panic("Error reading the file to Array")
 	}
-	urls := ExtractRepoUrls(repos, Cfg.UseSSHCloning)
 	// Log the whole repos slice with new lines between each repo
 	log.Info("Number of repos: ", len(repos))
-	log.Debug("Repos: ", strings.Join(urls, "\n"))
 
 	destPath := "./repos"
 
 	// Split the list of repos into chunks to limit parallelism
-	repoChunks := chunks(urls, 30)
+	repoChunks := chunks(repos, 30)
 	for _, chunk := range repoChunks {
 		cloneListOfRepos(chunk, destPath, Cfg.GitUsername, Cfg.GitPassword)
 	}
