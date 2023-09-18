@@ -114,5 +114,5 @@ func main() {
 		cloneListOfRepos(chunk, utils.Cfg.GitUsername, utils.Cfg.GitPassword)
 	}
 	log.Info("Starting to zip repos")
-	// ZipAllProjects("repos", Cfg.OutputDir)
+	utils.ZipAllProjects(utils.Cfg.CloneDir, utils.Cfg.OutputDir)
 }
