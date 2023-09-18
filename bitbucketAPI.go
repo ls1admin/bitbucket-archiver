@@ -27,20 +27,7 @@ type Repo struct {
 	} `json:"links"`
 }
 
-func GetRepositoriesToArchive() ([]string, error) {
-	// Get all repositories
-	repositories, err := getArchivedRepositories()
-	if err != nil {
-		log.WithError(err).Fatal("Error getting repositories")
-	}
-
-	// Extract SSH URLs
-	urls := extractRepoUrls(repositories, Cfg.UseSSHCloning)
-
-	return urls, nil
-}
-
-func extractRepoUrls(repositories []Repo, useSSH bool) []string {
+func ExtractRepoUrls(repositories []Repo, useSSH bool) []string {
 	var urls []string
 	// Filter for SSH repositories
 	for _, repo := range repositories {
@@ -64,7 +51,7 @@ func parseRepositoryPayloadJSON(jsonBytes []byte) (r RepositoryPayload) {
 	return
 }
 
-func getArchivedRepositories() ([]Repo, error) {
+func GetArchivedRepositories() ([]Repo, error) {
 	// Create a basic authentication header
 	auth := Cfg.BitbucketUsername + ":" + Cfg.BitbucketPassword
 	basicAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte(auth))

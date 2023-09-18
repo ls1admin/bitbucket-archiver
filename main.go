@@ -125,18 +125,19 @@ func main() {
 	}
 
 	LoadConfig() // Load the config file into a global variable
-	repos, err := GetRepositoriesToArchive()
+	repos, err := GetArchivedRepositories()
 	if err != nil {
-		log.WithError(err).Error("Error reading the file to Array")
-	} else {
-		// Log the whole repos slice with new lines between each repo
-		log.Debug("Repos: ", strings.Join(repos, "\n"))
-		log.Info("Number of repos: ", len(repos))
+		log.WithError(err).Panic("Error reading the file to Array")
 	}
+	urls := ExtractRepoUrls(repos, Cfg.UseSSHCloning)
+	// Log the whole repos slice with new lines between each repo
+	log.Info("Number of repos: ", len(repos))
+	log.Debug("Repos: ", strings.Join(urls, "\n"))
+
 	destPath := "./repos"
 
 	// Split the list of repos into chunks to limit parallelism
-	repoChunks := chunks(repos, 30)
+	repoChunks := chunks(urls, 30)
 	for _, chunk := range repoChunks {
 		cloneListOfRepos(chunk, destPath, Cfg.GitUsername, Cfg.GitPassword)
 	}

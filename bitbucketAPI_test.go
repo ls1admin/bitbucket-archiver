@@ -151,11 +151,11 @@ func TestUrlExtraction(t *testing.T) {
     }`)
 
 	r := parseRepositoryPayloadJSON(apiResponse).Values[0]
-	httpsUrl := extractRepoUrls([]Repo{r}, false)
+	httpsUrl := ExtractRepoUrls([]Repo{r}, false)
 	assert.Len(t, httpsUrl, 1)
 	assert.Equal(t, httpsUrl[0], "https://bitbucket.example.com/scm/~pom15/00-template.git")
 
-	sshUrl := extractRepoUrls([]Repo{r}, true)
+	sshUrl := ExtractRepoUrls([]Repo{r}, true)
 	assert.Len(t, sshUrl, 1)
 	assert.Equal(t, sshUrl[0], "ssh://git@bitbucket.example.com:7999/~pom15/00-template.git")
 }
