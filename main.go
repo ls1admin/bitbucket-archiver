@@ -115,6 +115,8 @@ func main() {
 		log.Warn("DEBUG MODE ENABLED")
 	}
 
+	LoadConfig() // Load the config file into a global variable
+
 	filePath := "repos.txt" // Replace with the path to your file
 
 	log.Info("Reading file:", filePath)
