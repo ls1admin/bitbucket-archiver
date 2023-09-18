@@ -4,73 +4,73 @@ import (
 	"archive/zip"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
 
 func ZipFolder(folderPath, zipFilePath string) error {
-	// Create a new zip file
-	zipFile, err := os.Create(zipFilePath)
+	log.Debug("Zipping folder: ", folderPath, " to: ", zipFilePath)
+	zipfile, err := os.Create(zipFilePath)
 	if err != nil {
 		return err
 	}
-	defer zipFile.Close()
+	defer zipfile.Close()
 
-	// Create a zip writer
-	zipWriter := zip.NewWriter(zipFile)
-	defer zipWriter.Close()
+	archive := zip.NewWriter(zipfile)
+	defer archive.Close()
 
-	// Walk through the folder and add files to the zip archive
-	err = filepath.Walk(folderPath, func(filePath string, info os.FileInfo, err error) error {
+	info, err := os.Stat(folderPath)
+	if err != nil {
+		return nil
+	}
+
+	var baseDir string
+	if info.IsDir() {
+		baseDir = filepath.Base(folderPath)
+	}
+
+	filepath.Walk(folderPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
-		// Skip directories
+		header, err := zip.FileInfoHeader(info)
+		if err != nil {
+			return err
+		}
+
+		if baseDir != "" {
+			header.Name = filepath.Join(baseDir, strings.TrimPrefix(path, folderPath))
+		}
+
+		if info.IsDir() {
+			header.Name += "/"
+		} else {
+			header.Method = zip.Deflate
+		}
+
+		writer, err := archive.CreateHeader(header)
+		if err != nil {
+			return err
+		}
+
 		if info.IsDir() {
 			return nil
 		}
 
-		// Create a file header for the zip entry
-		zipHeader, err := zip.FileInfoHeader(info)
-		if err != nil {
-			return err
-		}
-
-		// Set the name of the zip entry to be relative to the folder
-		zipHeader.Name, err = filepath.Rel(folderPath, filePath)
-		if err != nil {
-			return err
-		}
-
-		// Create a zip entry in the archive
-		zipEntry, err := zipWriter.CreateHeader(zipHeader)
-		if err != nil {
-			return err
-		}
-
-		// Copy the file content to the zip entry
-		file, err := os.Open(filePath)
+		file, err := os.Open(path)
 		if err != nil {
 			return err
 		}
 		defer file.Close()
-
-		_, err = io.Copy(zipEntry, file)
-		if err != nil {
-			return err
-		}
-
-		return nil
+		_, err = io.Copy(writer, file)
+		return err
 	})
 
-	if err != nil {
-		return err
-	}
-
-	log.Info("Folder zipped successfully to:", zipFilePath)
-	return nil
+	return err
 }
 
 func ZipAllProjects(rootPath string, zippedRoot string) {
@@ -90,8 +90,8 @@ func ZipAllProjects(rootPath string, zippedRoot string) {
 	log.Debug("Found folders: ", folders)
 
 	for _, folder := range folders {
-		zipPath := zippedRoot + "/" + filepath.Base(folder.Name()) + ".zip"
+		zipPath := path.Join(zippedRoot, folder.Name()+".zip")
 		log.Info("Zipping folder: ", folder, " to: ", zipPath)
-		ZipFolder(rootPath+folder.Name(), zipPath)
+		ZipFolder(path.Join(rootPath, folder.Name()), zipPath)
 	}
 }
