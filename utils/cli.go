@@ -1,4 +1,4 @@
-package main
+package utils
 
 import (
 	"flag"
@@ -20,6 +20,7 @@ type Config struct {
 	PagingLimit   int  `env:"PAGING_LIMIT" envDefault:"100"`
 
 	OutputDir string `env:"OUTPUT_DIR" envDefault:"./repos_zipped"`
+	CloneDir  string `env:"CLONE_DIR" envDefault:"./repos_cloned"`
 
 	DeleteRepos bool // No env var for this one, just a flag
 }
