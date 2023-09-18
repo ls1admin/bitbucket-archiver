@@ -11,7 +11,7 @@ COPY . .
 RUN go build -o test .
 
 # Start a new stage for the minimal runtime container
-FROM debian:buster-slim
+FROM ubuntu
 
 # Set the working directory inside the minimal runtime container
 WORKDIR /app
