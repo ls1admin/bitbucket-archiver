@@ -5,6 +5,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"os"
 	"strings"
 	"sync"
@@ -66,7 +67,6 @@ func parseProjectAndRepoName(repoURL string) (string, string) {
 
 func cloneGitRepo(repoURL, destPath, username, password string) error {
 	// Clone the repository from the given URL
-
 	defer clone_wg.Done()
 
 	projectName, repoName := parseProjectAndRepoName(repoURL)
@@ -77,7 +77,7 @@ func cloneGitRepo(repoURL, destPath, username, password string) error {
 
 	_, err := git.PlainClone(destPath, false, &git.CloneOptions{
 		URL:      repoURL,
-		Progress: os.Stdout,
+		Progress: nil, // Avoid sending progress to stdout and the server
 		Auth: &http.BasicAuth{
 			Username: username, // Your Git username
 			Password: password, // Your Git password or personal access token
@@ -98,7 +98,7 @@ func cloneListOfRepos(repos []string, destPath, username, password string) error
 	// safety check
 	if len(repos) > 30 {
 		log.Error("too many repos to clone at once")
-		return nil // TODO: This is definitely not the right way to handle this
+		return errors.New("too many repos to clone at once")
 	}
 
 	for _, repo := range repos {
@@ -110,7 +110,6 @@ func cloneListOfRepos(repos []string, destPath, username, password string) error
 }
 
 // function that creates chunks of length n from a slice of strings
-
 func chunks(s []string, n int) [][]string {
 	var chunks [][]string
 	for n < len(s) {
@@ -126,20 +125,21 @@ func main() {
 	}
 
 	LoadConfig() // Load the config file into a global variable
-
-	filePath := "repos.txt" // Replace with the path to your file
-
-	log.Info("Reading file:", filePath)
-	repos, err := readFileLinesToArray(filePath)
+	repos, err := GetRepositoriesToArchive()
 	if err != nil {
 		log.WithError(err).Error("Error reading the file to Array")
 	} else {
 		// Log the whole repos slice with new lines between each repo
-		log.Debug("Repos:", strings.Join(repos, "\n"))
+		log.Debug("Repos: ", strings.Join(repos, "\n"))
+		log.Info("Number of repos: ", len(repos))
 	}
 	destPath := "./repos"
 
-	// TODO: Split the list of repos into chunks to limit parallelism
-	cloneListOfRepos(repos, destPath, Cfg.GitUsername, Cfg.GitPassword)
-	ZipAllProjects("repos", Cfg.OutputDir)
+	// Split the list of repos into chunks to limit parallelism
+	repoChunks := chunks(repos, 30)
+	for _, chunk := range repoChunks {
+		cloneListOfRepos(chunk, destPath, Cfg.GitUsername, Cfg.GitPassword)
+	}
+	log.Info("Starting to zip repos")
+	// ZipAllProjects("repos", Cfg.OutputDir)
 }

@@ -12,7 +12,14 @@ type Config struct {
 	GitUsername string `env:"GIT_USERNAME,notEmpty"`
 	GitPassword string `env:"GIT_PASSWORD,notEmpty"`
 
-	OutputDir string `env:"OUTPUT_DIR,notEmpty"`
+	BitbucketUrl      string `env:"BITBUCKET_URL,notEmpty"`
+	BitbucketUsername string `env:"BITBUCKET_USERNAME,notEmpty"`
+	BitbucketPassword string `env:"BITBUCKET_PASSWORD,notEmpty"`
+
+	UseSSHCloning bool `env:"USE_SSH_CLONING" envDefault:"false"`
+	PagingLimit   int  `env:"PAGING_LIMIT" envDefault:"100"`
+
+	OutputDir string `env:"OUTPUT_DIR" envDefault:"./repos_zipped"`
 
 	DeleteRepos bool // No env var for this one, just a flag
 }
