@@ -74,6 +74,8 @@ func ZipFolder(folderPath, zipFilePath string) error {
 }
 
 func ZipAllProjects(rootPath string, zippedRoot string) {
+	log.Info("Zipping all projects in: ", rootPath)
+
 	// create zipped root folder
 	err := os.MkdirAll(zippedRoot, os.ModePerm)
 	if err != nil {
@@ -85,6 +87,7 @@ func ZipAllProjects(rootPath string, zippedRoot string) {
 	if err != nil {
 		log.WithError(err).Error("Unable to list folders")
 	}
+	log.Debug("Found folders: ", folders)
 
 	for _, folder := range folders {
 		zipPath := zippedRoot + "/" + filepath.Base(folder.Name()) + ".zip"
