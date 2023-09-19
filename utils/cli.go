@@ -17,7 +17,6 @@ type Config struct {
 	BitbucketPassword string `env:"BITBUCKET_PASSWORD,notEmpty"`
 
 	UseSSHCloning bool `env:"USE_SSH_CLONING" envDefault:"false"`
-	PagingLimit   int  `env:"PAGING_LIMIT" envDefault:"100"`
 
 	OutputDir string `env:"OUTPUT_DIR" envDefault:"./repos_zipped"`
 	CloneDir  string `env:"CLONE_DIR" envDefault:"./repos_cloned"`
