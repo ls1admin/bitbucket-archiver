@@ -16,7 +16,9 @@ type Config struct {
 	BitbucketUsername string `env:"BITBUCKET_USERNAME,notEmpty"`
 	BitbucketPassword string `env:"BITBUCKET_PASSWORD,notEmpty"`
 
-	UseSSHCloning bool `env:"USE_SSH_CLONING" envDefault:"false"`
+	UseSSHCloning bool  `env:"USE_SSH_CLONING" envDefault:"false"`
+	MaxRepoSize   int64 `env:"MAX_REPO_SIZE" envDefault:"5000000000"`
+	Parallelism   int   `env:"PARALLELISM" envDefault:"20"`
 
 	OutputDir string `env:"OUTPUT_DIR" envDefault:"./repos_zipped"`
 	CloneDir  string `env:"CLONE_DIR" envDefault:"./repos_cloned"`

@@ -8,7 +8,6 @@ import (
 	"bitbucket_archiver/utils"
 	"path"
 
-	"errors"
 	"os"
 	"sync"
 
@@ -21,9 +20,6 @@ import (
 var clone_wg sync.WaitGroup
 
 func cloneGitRepo(repo bitbucket.Repo, username, password string) error {
-	// Clone the repository from the given URL
-	defer clone_wg.Done()
-
 	destPath := path.Join(utils.Cfg.CloneDir, repo.Project.Name, repo.Name)
 
 	log.Debugf("Cloning repo: %s to: %s", repo.Name, destPath)
@@ -39,6 +35,7 @@ func cloneGitRepo(repo bitbucket.Repo, username, password string) error {
 
 	if err != nil {
 		log.WithError(err).Errorf("Error cloning repo: %s to: %s ", repo.Name, destPath)
+		return err
 	}
 
 	return nil
@@ -48,21 +45,25 @@ func cloneGitRepo(repo bitbucket.Repo, username, password string) error {
 // This funciton limits the number of parallel clones to 30
 func cloneListOfRepos(repos []bitbucket.Repo, username, password string) error {
 	log.Debugf("Cloning %d repos", len(repos))
-	// safety check
-	if len(repos) > 20 {
-		log.Error("too many repos to clone at once")
-		return errors.New("too many repos to clone at once")
-	}
-
+	clone_wg = sync.WaitGroup{}
 	for _, repo := range repos {
 		clone_wg.Add(1)
-		go cloneGitRepo(repo, username, password)
+		repo := repo
+		go func() {
+			defer clone_wg.Done()
+			if repo.GetSize() < utils.Cfg.MaxRepoSize {
+				cloneGitRepo(repo, username, password)
+			} else {
+				log.Warnf("Skipping repo %s because it is too big", repo.Name)
+			}
+		}()
 	}
 	clone_wg.Wait()
 	return nil
 }
 
 func main() {
+	log.SetFormatter(&log.TextFormatter{TimestampFormat: "02.01.2006 15:04:05", FullTimestamp: true})
 	if is_debug := os.Getenv("DEBUG"); is_debug == "true" {
 		log.SetLevel(log.DebugLevel)
 		log.Warn("DEBUG MODE ENABLED")
@@ -109,7 +110,7 @@ func main() {
 	log.Info("Number of repos: ", len(repos))
 
 	// Split the list of repos into chunks to limit parallelism
-	repoChunks := utils.Chunks(repos, 20)
+	repoChunks := utils.Chunks(repos, utils.Cfg.Parallelism)
 	for _, chunk := range repoChunks {
 		cloneListOfRepos(chunk, utils.Cfg.GitUsername, utils.Cfg.GitPassword)
 	}

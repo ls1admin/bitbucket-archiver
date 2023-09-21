@@ -2,9 +2,10 @@ package bitbucket
 
 import (
 	"bitbucket_archiver/utils"
-	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 
 	log "github.com/sirupsen/logrus"
@@ -37,11 +38,50 @@ func (r Repo) GetHTTPRepoUrl() *string {
 	return r.extractRepoUrls("http")
 }
 
-func (r Repo) Delete() error {
-	// Create a basic authentication header
-	auth := utils.Cfg.BitbucketUsername + ":" + utils.Cfg.BitbucketPassword
-	basicAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte(auth))
+func (r Repo) GetSize() int64 {
+	sizeUrl := fmt.Sprintf("%s/projects/%s/repos/%s/sizes", utils.Cfg.BitbucketUrl, r.Project.Key, r.Slug)
 
+	req, err := http.NewRequest("GET", sizeUrl, nil)
+	if err != nil {
+		log.WithError(err).Fatal("Error creating request")
+	}
+
+	// Set the Authorization header for basic authentication
+	req.Header.Add("Authorization", basicAuth())
+
+	// Send an HTTP GET request to the URL
+	resp, err := client.Do(req)
+	if err != nil {
+		log.WithError(err).Fatal("Error sending GET request")
+		return 0
+	}
+	defer resp.Body.Close()
+
+	// Check if the response status code is 200 OK
+	if resp.StatusCode != http.StatusOK {
+		log.Error("Error: Unexpected status code:", resp.Status)
+		return 0
+	}
+
+	// Read the response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.WithError(err).Fatal("Error reading response body")
+		return 0
+	}
+
+	sizeInfo := struct {
+		RepositorySize int64 `json:"repository"`
+	}{}
+	err = json.Unmarshal(body, &sizeInfo)
+	if err != nil {
+		log.WithError(err).Fatal("Error unmarshalling JSON")
+	}
+
+	return sizeInfo.RepositorySize
+}
+
+func (r Repo) Delete() error {
 	bitbucketDeleteUrl := fmt.Sprintf("%s/rest/api/latest/projects/%s/repos/%s", utils.Cfg.BitbucketUrl, r.Project.Key, r.Slug)
 
 	req, err := http.NewRequest("DELETE", bitbucketDeleteUrl, nil)
@@ -50,7 +90,7 @@ func (r Repo) Delete() error {
 	}
 
 	// Set the Authorization header for basic authentication
-	req.Header.Add("Authorization", basicAuth)
+	req.Header.Add("Authorization", basicAuth())
 
 	// Send an HTTP GET request to the URL
 	resp, err := client.Do(req)
