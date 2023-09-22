@@ -116,4 +116,5 @@ func main() {
 	}
 	log.Info("Starting to zip repos")
 	utils.ZipAllProjects(utils.Cfg.CloneDir, utils.Cfg.OutputDir)
+	log.Info("SUCCESS: all repos zipped")
 }
