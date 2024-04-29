@@ -13,6 +13,5 @@ RUN CGO_ENABLED=0 go build -o bitbucket-archiver .
 FROM gcr.io/distroless/static-debian12
 
 COPY --from=builder /app/bitbucket-archiver .
-RUN chmod +x /app/bitbucket-archiver
 
 CMD ["/app/bitbucket-archiver"]
